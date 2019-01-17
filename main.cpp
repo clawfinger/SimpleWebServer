@@ -1,4 +1,5 @@
 #include <iostream>
+#include <fstream>
 #include <boost/bind.hpp>
 #include <boost/asio.hpp>
 #include <boost/thread.hpp>
@@ -24,10 +25,22 @@ private:
     {
         if (!error)
         {
-            m_socket.async_write_some(boost::asio::buffer(&m_buffer[0], bytes_transferred), boost::bind(&Connection::writeHandler, this, _1, _2));
-            for (int i = 0; i < bytes_transferred; ++i)
-                std::cout << m_buffer[i];
-            std::cout << std::endl;
+            std::string fstr("fail");
+            std::ifstream file("/home/dmitry/Documents/test.txt");
+            if (file.is_open())
+            {
+                std::string str;
+                std::getline(file, str);
+                m_socket.async_write_some(boost::asio::buffer(&str[0], str.size()), boost::bind(&Connection::writeHandler, this, _1, _2));
+            }
+            else
+            {
+                m_socket.async_write_some(boost::asio::buffer(&fstr[0], fstr.size()), boost::bind(&Connection::writeHandler, this, _1, _2));
+            }
+//            m_socket.async_write_some(boost::asio::buffer(&m_buffer[0], bytes_transferred), boost::bind(&Connection::writeHandler, this, _1, _2));
+//            for (int i = 0; i < bytes_transferred; ++i)
+//                std::cout << m_buffer[i];
+//            std::cout << std::endl;
         }
     }
     void writeHandler(const boost::system::error_code& error, std::size_t bytes_transferred)
