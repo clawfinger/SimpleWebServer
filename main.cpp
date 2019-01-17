@@ -1,6 +1,7 @@
 #include <iostream>
 #include <boost/bind.hpp>
 #include <boost/asio.hpp>
+#include <boost/thread.hpp>
 #include <vector>
 
 using boost::asio::ip::tcp;
@@ -8,14 +9,15 @@ using boost::asio::ip::tcp;
 class Connection
 {
 public:
-    Connection(boost::asio::io_service& _service) :m_socket(_service), m_buffer(1024) {}
+    Connection(boost::asio::io_service& service) :_service(service), m_socket(service), m_buffer(1024) {}
     tcp::socket& socket()
     {
         return m_socket;
     }
-    void start()
+    void operator()()
     {
         m_socket.async_read_some(boost::asio::buffer(&m_buffer[0], 1024), boost::bind(&Connection::readHandler, this, _1, _2));
+        _service.run();
     }
 private:
     void readHandler(const boost::system::error_code& error, std::size_t bytes_transferred)
@@ -36,6 +38,7 @@ private:
         }
     }
 private:
+    boost::asio::io_service& _service;
     tcp::socket m_socket;
     std::vector<char> m_buffer;
 };
@@ -59,7 +62,8 @@ private:
     void handle_accept(Connection* connection, const boost::system::error_code& error)
     {
         std::cout << "New connection!" << std::endl;
-        connection->start();
+        boost::thread thread(std::move(*connection));
+        thread.detach();
         start_accept();
     }
 
