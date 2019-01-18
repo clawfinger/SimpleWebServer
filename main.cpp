@@ -1,3 +1,5 @@
+#include <unistd.h>
+#include <cstdlib>
 #include <iostream>
 #include <fstream>
 #include <boost/bind.hpp>
@@ -86,6 +88,25 @@ private:
 
 int main(int argc, char* argv[])
 {
+    int port;
+    std::string dir;
+    std::string host;
+    int c;
+    while ((c = getopt (argc, argv, "h:p:d:")) != -1)
+    switch (c)
+        {
+        case 'h':
+          host = optarg;
+          break;
+        case 'p':
+          port = atoi(optarg);
+          break;
+        case 'd':
+          dir = optarg;
+          break;
+        default:
+          abort ();
+        }
     try
     {
         boost::asio::io_service io_service;
