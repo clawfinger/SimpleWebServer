@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.1)
 set (CMAKE_CXX_STANDARD 11)
 set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=gnu++11 -no-pie")
-project(WebServer)
+project(final)
 find_package(Boost 1.65.1)
 
 if(Boost_FOUND)
