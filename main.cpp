@@ -6,6 +6,21 @@
 #include <boost/asio.hpp>
 #include <boost/thread.hpp>
 #include <vector>
+#include "http_parser.h"
+#include <string.h>
+#include <sstream>
+
+int on_url(http_parser* parser, const char* at, size_t length) {
+    http_parser_url url_data;
+    http_parser_url_init(&url_data);
+    http_parser_parse_url(at, length, 0, &url_data);
+    std::string url(at);
+    uint16_t size = url_data.field_data[UF_PATH].len;
+    uint16_t from = url_data.field_data[UF_PATH].off;
+    std::string path = url.substr(from, size);
+    strncpy((char*)parser->data, path.c_str(), path.size());
+    return 0;
+}
 
 using boost::asio::ip::tcp;
 
@@ -27,23 +42,35 @@ private:
     {
         if (!error)
         {
-            std::string fstr("fail");
-            std::ifstream file(m_dir + std::string("/test.txt"));
-            if (file.is_open())
+            std::string path = getPath(bytes_transferred);
+            bool pathOk = !path.empty();
+            std::ifstream file(m_dir + path);
+            if (pathOk && file.is_open())
             {
-                std::string str;
-                std::getline(file, str);
+                std::stringstream ss;
+                std::stringstream fileStream;
+                fileStream << file.rdbuf();
+                std::string content(fileStream.str());
+                ss << "HTTP/1.0 200 OK\r\n";
+                ss << "Content-length: " << content.size() << "\r\n";
+                ss << "Connection: close\r\n";
+                ss << "Content-Type: text/html\r\n";
+                ss << "\r\n";
+                ss << content;
+                std::string str(ss.str());
                 m_socket.async_write_some(boost::asio::buffer(&str[0], str.size()), boost::bind(&Connection::writeHandler, this, _1, _2));
                 file.close();
             }
             else
             {
-                m_socket.async_write_some(boost::asio::buffer(&fstr[0], fstr.size()), boost::bind(&Connection::writeHandler, this, _1, _2));
+                std::string not_found("HTTP/1.0 404 NOT FOUND\r\nContent-length: 0\r\nContent-Type: text/html\r\n\r\n");
+                m_socket.async_write_some(boost::asio::buffer(&not_found[0], not_found.size()), boost::bind(&Connection::writeHandler, this, _1, _2));
             }
 //            m_socket.async_write_some(boost::asio::buffer(&m_buffer[0], bytes_transferred), boost::bind(&Connection::writeHandler, this, _1, _2));
 //            for (int i = 0; i < bytes_transferred; ++i)
 //                std::cout << m_buffer[i];
 //            std::cout << std::endl;
+            m_buffer.clear();
         }
         else if ((boost::asio::error::eof == error) ||
                      (boost::asio::error::connection_reset == error))
@@ -57,6 +84,22 @@ private:
         {
             m_socket.async_read_some(boost::asio::buffer(&m_buffer[0], 1024), boost::bind(&Connection::readHandler, this, _1, _2));
         }
+        m_buffer.clear();
+    }
+private:
+    std::string getPath(std::size_t bytes_transferred)
+    {
+        http_parser_settings in_settings;
+        http_parser_settings_init(&in_settings);
+        in_settings.on_url = on_url;
+
+        char* in_parser_buffer = new char[255];
+        memset(in_parser_buffer, 0, 255);
+        http_parser in_parser;
+        in_parser.data = in_parser_buffer;
+        http_parser_init(&in_parser, HTTP_REQUEST);
+        http_parser_execute(&in_parser, &in_settings, &m_buffer[0], bytes_transferred);
+        return std::string(in_parser_buffer);
     }
 private:
     boost::asio::io_service& _service;

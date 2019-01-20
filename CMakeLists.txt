@@ -1,9 +1,11 @@
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 3.1)
+set (CMAKE_CXX_STANDARD 11)
+set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=gnu++11 -no-pie")
 project(WebServer)
 find_package(Boost 1.65.1)
 
 if(Boost_FOUND)
     include_directories(${Boost_INCLUDE_DIRS})
-    add_executable(${PROJECT_NAME} "main.cpp")
+    add_executable(${PROJECT_NAME} "main.cpp" "http_parser.c" "http_parser.h")
     target_link_libraries(${PROJECT_NAME} boost_system boost_thread)
 endif()
