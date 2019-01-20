@@ -55,9 +55,10 @@ private:
                 fileStream << file.rdbuf();
                 std::string content(fileStream.str());
                 ss << "HTTP/1.0 200 OK\r\n";
+                ss << "Content-Type: text/html\r\n";
                 ss << "Content-length: " << content.size() << "\r\n";
                 ss << "Connection: close\r\n";
-                ss << "Content-Type: text/html\r\n";
+                ss << "\r\n";
                 ss << content;
                 std::string str(ss.str());
                 m_socket.async_write_some(boost::asio::buffer(&str[0], str.size()), boost::bind(&Connection::writeHandler, this, _1, _2));
@@ -144,43 +145,43 @@ private:
 int main(int argc, char* argv[])
 {
 
-    pid_t pid, sid;
+//    pid_t pid, sid;
 
-    /* Fork off the parent process */
-    pid = fork();
-    if (pid < 0) {
-            exit(EXIT_FAILURE);
-    }
-    /* If we got a good PID, then
-       we can exit the parent process. */
-    if (pid > 0) {
-            exit(EXIT_SUCCESS);
-    }
+//    /* Fork off the parent process */
+//    pid = fork();
+//    if (pid < 0) {
+//            exit(EXIT_FAILURE);
+//    }
+//    /* If we got a good PID, then
+//       we can exit the parent process. */
+//    if (pid > 0) {
+//            exit(EXIT_SUCCESS);
+//    }
 
-    /* Change the file mode mask */
-    umask(0);
+//    /* Change the file mode mask */
+//    umask(0);
 
-    /* Open any logs here */
+//    /* Open any logs here */
 
-    /* Create a new SID for the child process */
-    sid = setsid();
-    if (sid < 0) {
-            /* Log any failure here */
-            exit(EXIT_FAILURE);
-    }
+//    /* Create a new SID for the child process */
+//    sid = setsid();
+//    if (sid < 0) {
+//            /* Log any failure here */
+//            exit(EXIT_FAILURE);
+//    }
 
-    /* Change the current working directory */
-    if ((chdir("/")) < 0) {
-            /* Log any failure here */
-            exit(EXIT_FAILURE);
-    }
+//    /* Change the current working directory */
+//    if ((chdir("/")) < 0) {
+//            /* Log any failure here */
+//            exit(EXIT_FAILURE);
+//    }
 
 
-    /* Close out the standard file descriptors */
-    close(STDIN_FILENO);
-    close(STDOUT_FILENO);
-    close(STDERR_FILENO);
-
+//    /* Close out the standard file descriptors */
+//    close(STDIN_FILENO);
+//    close(STDOUT_FILENO);
+//    close(STDERR_FILENO);
+//    signal(SIGCHLD, SIG_IGN);
     int port;
     std::string dir;
     std::string host;
