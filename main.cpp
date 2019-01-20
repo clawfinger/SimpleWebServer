@@ -9,6 +9,9 @@
 #include "http_parser.h"
 #include <string.h>
 #include <sstream>
+#include <utility>
+#include <string>
+
 //compile with  -no-pie
 int on_url(http_parser* parser, const char* at, size_t length) {
     http_parser_url url_data;
