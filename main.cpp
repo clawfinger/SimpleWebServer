@@ -46,7 +46,7 @@ private:
         if (!error)
         {
             std::string path = getPath(bytes_transferred);
-            bool pathOk = !path.empty();
+            bool pathOk = path.size() > 1;
             std::ifstream file(m_dir + path);
             if (pathOk && file.is_open())
             {
