@@ -58,7 +58,7 @@ private:
                 ss << "Content-Type: text/html\r\n";
                 ss << "Content-length: " << content.size() << "\r\n";
                 ss << "Connection: close\r\n";
-                ss << "\r\n";
+                ss << "\r\n\r\n";
                 ss << content;
                 std::string str(ss.str());
                 m_socket.async_write_some(boost::asio::buffer(&str[0], str.size()), boost::bind(&Connection::writeHandler, this, _1, _2));
