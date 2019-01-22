@@ -45,7 +45,13 @@ private:
     {
         if (!error)
         {
+            std::cout << "input:" << std::endl;
+            for (int i = 0; i < bytes_transferred; ++i)
+                std::cout << m_buffer[i];
+            std::cout << std::endl;
+
             std::string path = getPath(bytes_transferred);
+            std::cout << "Path: " << path << std::endl;
             bool pathOk = path.size() > 1;
             std::ifstream file(m_dir + path);
             if (pathOk && file.is_open())
@@ -62,11 +68,13 @@ private:
                 ss << content;
                 std::string str(ss.str());
                 file.close();
+                std::cout << "Response: " << str << std::endl;
                 m_socket.async_write_some(boost::asio::buffer(&str[0], str.size()), boost::bind(&Connection::writeHandler, this, _1, _2));
             }
             else
             {
                 std::string not_found("HTTP/1.0 404 NOT FOUND\r\nContent-length: 0\r\nContent-Type: text/html\r\n\r\n");
+                std::cout << "Responce: " << not_found << std::endl;
                 m_socket.async_write_some(boost::asio::buffer(&not_found[0], not_found.size()), boost::bind(&Connection::writeHandler, this, _1, _2));
             }
 //            m_socket.async_write_some(boost::asio::buffer(&m_buffer[0], bytes_transferred), boost::bind(&Connection::writeHandler, this, _1, _2));
@@ -130,7 +138,7 @@ private:
 
     void handle_accept(Connection* connection, const boost::system::error_code& error)
     {
-        std::cout << "New connection!" << std::endl;
+        //std::cout << "New connection!" << std::endl;
         boost::thread thread(std::move(*connection));
         thread.detach();
         start_accept();
