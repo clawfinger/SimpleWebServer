@@ -179,10 +179,19 @@ int main(int argc, char* argv[])
 
 
     /* Close out the standard file descriptors */
+    auto fd = open("/tmp/webserver.log", O_WRONLY|O_CREAT|O_APPEND, 0777);
+
+    dup2(fd, STDOUT_FILENO);
+
+    dup2(fd, STDERR_FILENO);
+
     close(STDIN_FILENO);
-    close(STDOUT_FILENO);
-    close(STDERR_FILENO);
+
+    if (fd > 2) close(fd);
+
+    std::cout << "===================[ server start ]===================\n";
     signal(SIGCHLD, SIG_IGN);
+    signal(SIGHUP, SIG_IGN);
     int port;
     std::string dir;
     std::string host;
