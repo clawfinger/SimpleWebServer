@@ -30,21 +30,22 @@ using boost::asio::ip::tcp;
 class Connection
 {
 public:
-    Connection(boost::asio::io_service& service, std::string& dir) :_service(service), m_socket(service), m_buffer(1024), m_dir(dir) {}
+    Connection(boost::asio::io_service& service, std::string& dir) :m_socket(service), m_buffer(1024), m_dir(dir) {}
     tcp::socket& socket()
     {
         return m_socket;
     }
     void operator()()
     {
-        m_socket.async_read_some(boost::asio::buffer(&m_buffer[0], 1024), boost::bind(&Connection::readHandler, this, _1, _2));
-        _service.run();
+        std::size_t read = m_socket.read_some(boost::asio::buffer(&m_buffer[0], 1024));
+        readHandler(read);
+        boost::system::error_code erro;
+        m_socket.shutdown(boost::asio::ip::tcp::socket::shutdown_both, erro);
+        m_socket.close();
     }
 private:
-    void readHandler(const boost::system::error_code& error, std::size_t bytes_transferred)
+    void readHandler(std::size_t bytes_transferred)
     {
-        if (!error)
-        {
             std::cout << "input:" << std::endl;
             for (int i = 0; i < bytes_transferred; ++i)
                 std::cout << m_buffer[i];
@@ -69,35 +70,17 @@ private:
                 std::string str(ss.str());
                 file.close();
                 std::cout << "Response: " << str << std::endl;
-                m_socket.async_write_some(boost::asio::buffer(&str[0], str.size()), boost::bind(&Connection::writeHandler, this, _1, _2));
+                m_socket.write_some(boost::asio::buffer(&str[0], str.size()));
             }
             else
             {
                 std::string not_found("HTTP/1.0 404 NOT FOUND\r\nContent-length: 0\r\nContent-Type: text/html\r\n\r\n");
                 std::cout << "Responce: " << not_found << std::endl;
-                m_socket.async_write_some(boost::asio::buffer(&not_found[0], not_found.size()), boost::bind(&Connection::writeHandler, this, _1, _2));
+                m_socket.write_some(boost::asio::buffer(&not_found[0], not_found.size()));
             }
-//            m_socket.async_write_some(boost::asio::buffer(&m_buffer[0], bytes_transferred), boost::bind(&Connection::writeHandler, this, _1, _2));
-//            for (int i = 0; i < bytes_transferred; ++i)
-//                std::cout << m_buffer[i];
-//            std::cout << std::endl;
             m_buffer.clear();
-        }
-        else if ((boost::asio::error::eof == error) ||
-                     (boost::asio::error::connection_reset == error))
-        {
-            std::cout << "disconected!" << std::endl;
-        }
     }
-    void writeHandler(const boost::system::error_code& error, std::size_t bytes_transferred)
-    {
-        if (!error)
-        {
-            m_socket.close();
-            //m_socket.async_read_some(boost::asio::buffer(&m_buffer[0], 1024), boost::bind(&Connection::readHandler, this, _1, _2));
-        }
-        m_buffer.clear();
-    }
+
 private:
     std::string getPath(std::size_t bytes_transferred)
     {
@@ -114,7 +97,6 @@ private:
         return std::string(in_parser_buffer);
     }
 private:
-    boost::asio::io_service& _service;
     tcp::socket m_socket;
     std::vector<char> m_buffer;
     std::string& m_dir;
